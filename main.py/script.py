@@ -69,23 +69,21 @@ one_coords = [[], [], []]
 two_coords = [[], [], []]
 three_coords = [[], [], [], []]
 for i in range(3):
-    my_list = targets[i]
+    my_list = targets[1]
     for j in range(my_list[i]):
         one_coords[i].append((WIDTH//(my_list[i]) * j, 300 - (i * 150) + 30 * (j % 2)))
 for i in range(3):
-    my_list = targets[2][i]
-    for j in range(my_list):
-        two_coords[i].append((WIDTH//(my_list) * j, 300 - (i * 150) + 30 * (j % 2)))
+    my_list = targets[2]
+    for j in range(my_list[i]):
+        two_coords[i].append((WIDTH//(my_list[i]) * j, 300 - (i * 150) + 30 * (j % 2)))
 for i in range(4):
     my_list = targets[3]
     for j in range(my_list[i]):
-        three_coords[i].append((WIDTH//(my_list) * j, 300 - (i * 100) + 30 * (j % 2)))
+        three_coords[i].append((WIDTH//(my_list[i]) * j, 300 - (i * 100) + 30 * (j % 2)))
 
 run = True
 while run:
     timer.tick(fps)
-
-
     screen.fill("black")
     screen.blit(bgs[level - 1], (0, 0))
     screen.blit(banners[level - 1], (0, HEIGHT - 200))

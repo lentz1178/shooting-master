@@ -1,23 +1,44 @@
-import os
+import os, sys
 import pygame
 import math
 import importlib.resources as pkg_resources
 pygame.init()
 fps = 60
-timer = pygame.time.Clock()
+clock = pygame.time.Clock()
 font = pygame.font.SysFont("Arial", 32)
 WIDTH = 900
 HEIGHT = 800
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
-pygame.display.set_caption("Circle Animation")
 bgs = []
 banners = []
 gun = []
+shot = False
 target_images = [[], [], []]
 targets = {1: [10, 5, 3],
            2: [12, 8, 5],
            3: [15, 12, 8, 3]}
 level = 1
+total_shots = 0
+mode = 0
+ammo = 0
+points = 0
+time_remaining = 0
+time_passed = 0
+counter = 1
+shot = False
+menu = True
+game_over = False
+pause = False
+best_freeplay = 0
+best_ammo = 0
+best_timed = 0
+clicked = False
+write_values = False
+menu_img = pygame.image.load(f'assets/menus/mainMenu.png')
+game_over_img = pygame.image.load(f'assets/menus/gameOver.png')
+pause_img = pygame.image.load(f'assets/menus/pause.png')
+
+
 for i in range(1, 4):
     bgs.append(pygame.image.load(f"assets/bgs/{i}.png"))
     banners.append(pygame.image.load(f"assets/banners/{i}..png"))
@@ -29,6 +50,20 @@ for i in range(1, 4):
         for j in range(1, 5):
             target_images[i - 1].append(pygame.transform.scale(pygame.image.load(f"assets/targets/{i}/{j}.png"), (120 - (j * 18), 80 - (j*12))))
 
+def draw_score():
+    points_text = font.render(f"Points: {points}", True, "black")
+    screen.blit(points_text, (320, 660))
+    shot_text = font.render(f"Total Shots: {total_shots}", True, "black")
+    screen.blit(points_text, (320, 687))
+    time_text = font.render(f"Time Elapsed: {time_passed}", True, "black")
+    screen.blit(points_text, (320, 714))
+    if mode == 0:
+        mode_text = font.render(f'Freeplay!', True, "black")
+    if mode == 1:
+        mode_text = font.render(f'Ammo remaining: {ammo}', True, "black")
+    if mode == 2:
+        mode_text = font.render(f'Time remaining: {time_remaining}', True, "black")
+    screen.blit(mode_text, (320, 741))
 
 def draw_gun():
     mouse_pos = pygame.mouse.get_pos()
@@ -54,6 +89,20 @@ def draw_gun():
           if clicks[0]:
               pygame.draw.circle(screen, lasers[level - 1], mouse_pos, 5)
 
+def move_level(coords):
+    if level == 1 or level == 2:
+        max_val = 3
+    else:
+        max_val = 4
+    for i in range(max_val):
+        for j in range(len(coords[i])):
+            my_coords = coords[i][j]
+            if my_coords[0] < -150:
+                coords[i][j] = (WIDTH, my_coords[1])
+            else:
+                coords[i][j] = (my_coords[0] - 2**i, my_coords[1])
+    return coords
+
 def draw_level(coords):
     if level == 1 or level == 2:
         target_rects = [[], [], []]
@@ -64,6 +113,69 @@ def draw_level(coords):
             target_rects[i].append(pygame.rect.Rect((coords[i][j][0] + 20, coords[i][j][1]), (60 - i*12, 60 - i*12)))
             screen.blit(target_images[level - 1][i], coords[i][j])
     return target_rects
+
+def check_shot(targets, coords):
+    global points
+    mouse_pos = pygame.mouse.get_pos()
+    for i in range(len(targets)):
+        for j in range(len(targets[i])):
+            if targets[i][j].collidepoint(mouse_pos):
+                coords[i].pop(j)
+                points += 10 + 10 * (i**2)
+    return coords
+
+def draw_menu():
+    global game_over, pause, mode, level, menu, time_passed, ammo, total_shots, points, time_remaining, best_freeplay, best_ammo, best_timed, write_values
+    game_over = False
+    pause = False
+    screen.blit(menu_img, (0, 0))
+    mouse_pos = pygame.mouse.get_pos()
+    clicks = pygame.mouse.get_pressed()
+    freeplay_button = pygame.draw.rect(screen, 'green', [170, 524, 260, 100], 3)
+    #once the boxes are drawn and formatted the code is pygame.rect.Rect((170, 524), (260,100))
+    screen.blit(font.render(f'{best_freeplay}', True, 'black'), (340, 580))
+    ammo_button = pygame.draw.rect(screen, 'green', [470, 524, 260, 100], 3) 
+    screen.blit(font.render(f'{best_ammo}', True, 'black'), (640, 580))
+    timed_button =pygame.draw.rect(screen, 'green', [170, 644, 260, 100], 3)
+    screen.blit(font.render(f'{best_timed}', True, 'black'), (350, 710))
+    reset_button = pygame.draw.rect(screen, 'green', [470, 644, 260, 100], 3)
+    if freeplay_button.collidepoint(mouse_pos) and clicks[0] and not clicked:
+        mode = 0
+        level = 1
+        menu = False
+        time_passed = 0
+        points = 0
+        total_shots = 0
+    if ammo_button.collidepoint(mouse_pos) and clicks[0] and not clicked:
+        mode = 1
+        ammo = 81
+        level = 1
+        menu = False
+        time_passed = 0
+        points = 0
+        total_shots = 0
+    if timed_button.collidepoint(mouse_pos) and clicks[0] and not clicked:
+        mode = 2
+        time_remaining = 60
+        level = 1
+        menu = False
+        time_passed = 0
+        points = 0
+        total_shots = 0
+    if reset_button.collidepoint(mouse_pos) and clicks[0] and not clicked:
+        best_freeplay = 0
+        best_ammo = 0
+        best_timed = 0
+        write_values = True
+
+def draw_game_over():
+    pass
+
+def draw_pause():
+    pass
+
+
+
 #initial coordinates for targets
 one_coords = [[], [], []]
 two_coords = [[], [], []]
@@ -81,22 +193,87 @@ for i in range(4):
     for j in range(my_list[i]):
         three_coords[i].append((WIDTH//(my_list[i]) * j, 300 - (i * 100) + 30 * (j % 2)))
 
-run = True
-while run:
-    timer.tick(fps)
+running = True
+while running:
+    clock.tick(fps)
+    if level != 0:
+        if counter < 60:
+            counter += 1
+        else:
+            counter = 1
+            time_passed += 1
+            if mode == 2:
+                time_remaining -= 1
     screen.fill("black")
     screen.blit(bgs[level - 1], (0, 0))
     screen.blit(banners[level - 1], (0, HEIGHT - 200))
+    if menu:
+        level = 0
+        draw_menu()
+    if game_over:
+        level = 0
+        draw_game_over()
+    if pause:
+        level = 0
+        draw_pause()
+    
     if level == 1:
-        draw_level(one_coords)
+        target_boxes = draw_level(one_coords)
+        one_coords = move_level(one_coords)
+        if shot:
+            one_coords = check_shot(target_boxes, one_coords)
+            shot = False
     elif level == 2:
-        draw_level(two_coords)
+        target_boxes = draw_level(two_coords)
+        two_coords = move_level(two_coords)
+        if shot:
+            two_coords = check_shot(target_boxes, two_coords)
+            shot = False
     elif level == 3:
-        draw_level(three_coords)
+        target_boxes = draw_level(three_coords)
+        three_coords = move_level(three_coords)
+        if shot:
+            three_coords = check_shot(target_boxes, three_coords)
+            shot = False
     if level > 0:
         draw_gun()
+        draw_score()
+    
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             run = False
-    pygame.display.flip()
+            running = False
+        if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+            mouse_position = pygame.mouse.get_pos()
+            if (0 < mouse_position[0] < WIDTH) and (0 < mouse_position[1] < HEIGHT - 200):
+                shot = True
+                total_shots += 1
+                if mode == 1:
+                    ammo -= 1
+    if level > 0:
+        if target_boxes == [[], [], []] and level < 3:
+            level += 1
+        if (level == 3 and target_boxes == [[], [], [], []]) or (mode == 1 and ammo == 0) or (mode == 2 and time_remaining <= 0):
+            new_coords = True
+        if mode == 0:
+            if time_passed < best_freeplay or best_freeplay == 0:
+                best_freeplay = time_passed
+                write_values = True
+        if mode == 1:
+            if points > best_ammo:
+                best_ammo = points
+                write_values = True
+        if mode == 2:
+            if points > best_timed:
+                best_timed = points
+                write_values = True
+            game_over = True
+        if write_values:
+            file = open('High_Scores.txt', 'w')
+            file.write(f'{best_freeplay}\n{best_ammo}\n{best_timed}')
+            file.close()
+            write_values = False
+    
+    pygame.display.update()
 pygame.quit()
+

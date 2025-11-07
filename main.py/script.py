@@ -52,6 +52,13 @@ for i in range(1, 4):
         for j in range(1, 5):
             target_images[i - 1].append(pygame.transform.scale(pygame.image.load(f"assets/targets/{i}/{j}.png"), (120 - (j * 18), 80 - (j*12))))
 
+file = open('scores.txt', 'r')
+read_file = file.readlines()
+file.closed
+best_freeplay = int(read_file[0])
+best_ammo = int(read_file[1])
+best_timed = int(read_file[2])
+
 def draw_score():
     points_text = font.render(f"Points: {points}", True, "black")
     screen.blit(points_text, (320, 660))
@@ -179,7 +186,31 @@ def draw_menu():
         
 
 def draw_game_over():
-    pass
+    global level, pause, menu, points, total_shots, time_passed, time_remaining, clicked, game_over, menu_button
+    if mode == 0:
+        display_score == time_passed
+    else:
+        display_score = points
+    screen.blit(game_over_img, (0, 0))
+    mouse_pos = pygame.mouse.get_pos()
+    clicks = pygame.mouse.get_pressed()
+    exit_button = pygame.draw.rect(screen, 'green', [470, 644, 260, 100], 3)
+    resume_button = pygame.draw.rect(screen, 'green', [170, 661, 260, 100], 3)
+    menu_button = pygame.draw.rect(screen, 'green', [470, 661, 260, 100], 3)
+    screen.blit(font.render(f'Score: {display_score}', True, 'black'), (650, 570))
+    if resume_button.collidepoint(mouse_pos) and clicks[0] and not clicked:
+        clicked = True
+        level = 0
+        pause = False
+        game_over = False
+        menu = True
+        points = 0
+        total_shots = 0
+        time_passed = 0
+        time_remaining = 0
+    if exit_button.collidepoint(mouse_pos) and clicks[0] and not clicked:
+        global run
+        run = False
 
 def draw_pause():
     global level, pause, menu, points, total_shots, time_passed, time_remaining, clicked, new_coords
@@ -307,11 +338,11 @@ while running:
                 write_values = True
             game_over = True
         if write_values:
-            file = open('High_Scores.txt', 'w')
+            file = open('score.txt', 'w')
             file.write(f'{best_freeplay}\n{best_ammo}\n{best_timed}')
             file.close()
             write_values = False
-    
+
     pygame.display.update()
 pygame.quit()
 
